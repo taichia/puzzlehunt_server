@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
+from django.contrib import messages
 import random
 
 from utils import team_from_user_hunt
@@ -30,7 +31,8 @@ def registration(request):
     if(request.method == 'POST' and "form_type" in request.POST):
         if(request.POST["form_type"] == "new_team"):
             if(curr_hunt.team_set.filter(team_name__iexact=request.POST.get("team_name")).exists()):
-                return HttpResponse('fail-exists')
+                messages.error(request, 'This team already exists, please choose a new name')
+                return HttpResponseRedirect('/registration/')
             if(request.POST.get("team_name") != ""):
                 join_code = ''.join(random.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(5))
                 team = Team.objects.create(team_name=request.POST.get("team_name"), hunt=curr_hunt, 
@@ -40,9 +42,11 @@ def registration(request):
         elif(request.POST["form_type"] == "join_team"):
             team = curr_hunt.team_set.get(team_name=request.POST.get("team_name"))
             if(len(team.person_set.all()) >= team.hunt.team_size):
-                return HttpResponse('fail-full')
+                messages.error(request, 'Team is full, please remove a person and try again.')
+                return HttpResponseRedirect('/registration/')
             if(team.join_code.lower() != request.POST.get("join_code").lower()):
-                return HttpResponse('fail-password')
+                messages.error(request, 'Team Join Code is incorrect, please try again')
+                redirect('/registration/')
             request.user.person.teams.add(team)
             redirect('huntserver:registration')
     if("leave_team" in request.GET and request.GET["leave_team"] == "1"):
