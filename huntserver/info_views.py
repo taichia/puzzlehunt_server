@@ -46,7 +46,7 @@ def registration(request):
                 return HttpResponseRedirect('/registration/')
             if(team.join_code.lower() != request.POST.get("join_code").lower()):
                 messages.error(request, 'Team Join Code is incorrect, please try again')
-                redirect('/registration/')
+                return HttpResponseRedirect('/registration/')
             request.user.person.teams.add(team)
             redirect('huntserver:registration')
     if("leave_team" in request.GET and request.GET["leave_team"] == "1"):
